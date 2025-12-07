@@ -7,6 +7,17 @@ namespace RPGCM.Aplication.Commands
 {
     public class CriarGrupoCommand : ICommand<Guid>
     {
+        public CriarGrupoCommand()
+        {
+        }
+
+        public CriarGrupoCommand(Guid id, DateTime dataCriacao, string nome)
+        {
+            Id = id;
+            DataCriacao = dataCriacao;
+            Nome = nome;
+        }
+
         public Guid Id { get; set; }
         public DateTime DataCriacao { get; set; }
         public string Nome { get; set; }

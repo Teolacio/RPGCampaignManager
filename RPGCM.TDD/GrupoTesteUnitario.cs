@@ -1,43 +1,11 @@
 ﻿using RPGCM.Aplication.Commands;
 using RPGCM.Aplication.Shared;
 using RPGCM.Domain.Entities;
-using RPGCM.Domain.Interfaces;
 using RPGCM.Domain.Shared;
+using RPGCM.TDD.Shared;
 
 namespace RPGCM.TDD
 {
-    internal class RepositorioTeste : IRepository
-    {
-        List<IEntity> listaSimulandoBanco = new List<IEntity>();
-
-        public void Add<T>(T entity) where T : IEntity
-        {
-            if(!entity.IsValido())
-                throw new InvalidEntityException(entity.GetValidationErrors());
-
-            listaSimulandoBanco.Add(entity);
-        }
-
-        public Task<IEnumerable<T>> Get<T>(ISpecification<T> specification) where T : IEntity
-        {
-            var listaTipada = listaSimulandoBanco.OfType<T>();
-
-            var resultado = listaTipada
-                .Where(specification.Criteria.Compile())
-                .AsEnumerable();
-
-            return Task.FromResult(resultado);
-        }
-
-        public Task<bool> Update<T>(T entity) where T : IEntity
-        {
-            var listaTipada = listaSimulandoBanco.OfType<T>();
-            var alterar = listaTipada.Where(x => x.Id == entity.Id).First();
-            alterar = entity;
-            return Task.FromResult(true); ;
-        }
-    }
-
     public class GrupoTesteUnitario
     {
         [Fact]
@@ -45,30 +13,14 @@ namespace RPGCM.TDD
         {
             Guid id = Guid.NewGuid();
             DateTime dateInicio = DateTime.Now;
-            var repositorio = new RepositorioTeste();
-            var decorator = new ValidatingRepositoryDecorator(repositorio);
-            var handler = new CriarGrupoCommandHandler(decorator);
-            var comando1 = new CriarGrupoCommand()
-            {
-                Nome = "Nome Grupo 1",
-                Id = id,
-                DataCriacao = dateInicio
-            };
-            await handler.HandleAsync(comando1, new CancellationToken());
-            await handler.HandleAsync(new CriarGrupoCommand()
-            {
-                Nome = "nomeGrupo2",
-                Id = Guid.NewGuid(),
-                DataCriacao = new DateTime(2004, 12, 3)
-            }, new CancellationToken());
-            await handler.HandleAsync(new CriarGrupoCommand()
-            {
-                Nome = "nomeGrupo4",
-                Id = Guid.NewGuid(),
-                DataCriacao = new DateTime(2024, 1, 13)
-            }, new CancellationToken());
+            var factory = new Factory();
+            var handler = factory.CreateCriarGrupoCommandHandler();
 
-            var resultado = await repositorio.Get(new EntityByIdSpecification<Grupo>(id));
+            await handler.HandleAsync(new CriarGrupoCommand(id, dateInicio, "Nome Grupo 1"), new CancellationToken());
+            await handler.HandleAsync(new CriarGrupoCommand(Guid.NewGuid(), new DateTime(2004, 12, 3), "nomeGrupo2"), new CancellationToken());
+            await handler.HandleAsync(new CriarGrupoCommand(Guid.NewGuid(), new DateTime(2004, 1, 13), "nomeGrupo4"), new CancellationToken());
+
+            var resultado = await factory.Repositorio.Get(new EntityByIdSpecification<Grupo>(id));
 
             Assert.True(resultado.Count() == 1);
             Assert.Equivalent(new Grupo(id, dateInicio, "Nome Grupo 1"), resultado.ElementAt(0));
