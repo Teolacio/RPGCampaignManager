@@ -1,0 +1,6 @@
+@RPGCM.API = http://localhost:5122
+
+GET {{RPG_Campaign_Manager_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
